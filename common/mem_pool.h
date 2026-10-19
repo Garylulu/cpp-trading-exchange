@@ -2,28 +2,43 @@
 
 #include <cassert>
 #include <cstddef>
-#include <limits>
+#include <cstdio>
+#include <memory>
+#include <utility>
 #include <vector>
 
 template <typename T>
 class MemPool final {
 public:
-    /// Pre-allocate storage for num_elems objects of type T and thread every
-    /// slot onto the free list. No T is constructed here; that happens lazily
-    /// in allocate() via placement new, so T need not be default-constructible.
-    explicit MemPool(std::size_t num_elems) : store_(num_elems) {
+    /// Pre-allocate num_elems blocks up front, each holding a default-constructed
+    /// T and marked free. No further heap allocation happens after this.
+    explicit MemPool(std::size_t num_elems) : store_(num_elems, {T(), true}) {
         assert(num_elems > 0 && "MemPool must have a non-zero capacity");
-
-        // Each free block points at the next one; the last terminates the list.
-        for (std::size_t i = 0; i + 1 < num_elems; ++i) {
-            store_[i].next_free_ = i + 1;
-        }
-        store_.back().next_free_ = kNullIndex;
-        free_head_ = 0;
     }
 
+    /// The vector owns every block and destroys each T when it is released, so
+    /// there is nothing else to free here.
+    ~MemPool() = default;
+
+    /// Construct a T from args in the first free block and return a pointer to
+    /// it. If every block is occupied, nothing is stored, an error is printed,
+    /// and nullptr is returned.
     template <typename... Args>
-    T *allocate(Args &&...args) noexcept; // TODO
+    T *allocate(Args &&...args) noexcept {
+        for (auto &block : store_) {
+            if (block.is_free_) {
+                // The block always holds a live T, so end its lifetime before
+                // building the new one in its place.
+                std::destroy_at(&block.object_);
+                std::construct_at(&block.object_, std::forward<Args>(args)...);
+                block.is_free_ = false;
+                return &block.object_;
+            }
+        }
+
+        std::fprintf(stderr, "MemPool::allocate: pool exhausted (%zu blocks in use)\n", store_.size());
+        return nullptr;
+    }
 
     void deallocate(const T *elem) noexcept; // TODO
 
@@ -36,17 +51,13 @@ public:
     MemPool &operator=(const MemPool &&) = delete("a MemPool owns its backing storage and free list");
 
 private:
-    static constexpr std::size_t kNullIndex = std::numeric_limits<std::size_t>::max();
-
-    /// One slot of the pool: raw, suitably aligned storage for a T plus the
-    /// bookkeeping for the intrusive free list. storage_ is the first member so
-    /// a T* handed out by allocate() can be mapped back to its block.
+    /// One slot of the pool: the stored object plus whether it is free to use.
+    /// object_ is the first member so a T* handed out by allocate() can be
+    /// mapped back to its block.
     struct ObjectBlock {
-        alignas(T) std::byte storage_[sizeof(T)];
-        std::size_t next_free_ = kNullIndex;
+        T object_;
         bool is_free_ = true;
     };
 
     std::vector<ObjectBlock> store_;
-    std::size_t free_head_ = kNullIndex;
 };
