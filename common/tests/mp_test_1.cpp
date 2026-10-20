@@ -1,3 +1,5 @@
+// test file for allocate function
+
 #include "../mem_pool.h"
 #include <string>
 struct P { int a; double b; P() = default; P(int x, double y) : a(x), b(y) {} };
