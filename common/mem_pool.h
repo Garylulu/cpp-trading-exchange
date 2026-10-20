@@ -40,7 +40,24 @@ public:
         return nullptr;
     }
 
-    void deallocate(const T *elem) noexcept; // TODO
+    /// Return the block holding elem to the pool. The stored object is replaced
+    /// with a default-constructed T, releasing whatever it held, and the block
+    /// is marked free for the next allocate().
+    void deallocate(const T *elem) noexcept {
+        // object_ is the first member, so elem's address is its block's address.
+        const auto index = reinterpret_cast<const ObjectBlock *>(elem) - store_.data();
+        assert(index >= 0 && static_cast<std::size_t>(index) < store_.size() &&
+               "MemPool::deallocate: element does not belong to this pool");
+
+        auto &block = store_[static_cast<std::size_t>(index)];
+        assert(!block.is_free_ && "MemPool::deallocate: double free");
+
+        // Keep the invariant that every block holds a live T.
+        // Not necessary because allocate ensures the next object overwrites this current object
+        // std::destroy_at(&block.object_);
+        // std::construct_at(&block.object_);
+        block.is_free_ = true;
+    }
 
     // Deleted special members: the pool owns its backing storage and the free
     // list; copying would alias both.
