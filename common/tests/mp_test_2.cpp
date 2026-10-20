@@ -25,16 +25,15 @@ int main() {
 
     Person* p1 = pool.allocate("Gary", 25);
     Person* p2 = pool.allocate("Alice", 30);
-
-    std::cout << p1->name << '\n';
-    std::cout << p2->name << '\n';
-
-    pool.deallocate(p1);
-
     Person* p3 = pool.allocate("Bob", 40);
 
-    pool.deallocate(p2);
+    // std::cout << p1->name << '\n';
+    // std::cout << p2->name << '\n';
+
     pool.deallocate(p3);
+    pool.deallocate(p3);
+    pool.allocate(p3);
+    std::cout << p3->name << '\n';
 
     return 0;
 }
