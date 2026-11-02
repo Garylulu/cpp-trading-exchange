@@ -12,3 +12,9 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [":perf_utils"],
 )
+
+cc_library(
+    name = "order",
+    hdrs = ["order.h"],
+    visibility = ["//visibility:public"],
+)
