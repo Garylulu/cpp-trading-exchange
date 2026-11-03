@@ -18,3 +18,19 @@ cc_library(
     hdrs = ["order.h"],
     visibility = ["//visibility:public"],
 )
+
+cc_library(
+    name = "mem_pool_o",
+    hdrs = ["mem_pool_o.h"],
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
+    name = "order_book",
+    hdrs = ["order_book.h"],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":mem_pool_o",
+        ":order",
+    ],
+)
