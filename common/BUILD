@@ -34,3 +34,13 @@ cc_library(
         ":order",
     ],
 )
+
+cc_library(
+    name = "order_book_ta",
+    hdrs = ["order_book_ta.h"],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":mem_pool_o",
+        ":order",
+    ],
+)
