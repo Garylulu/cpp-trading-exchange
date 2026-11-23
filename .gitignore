@@ -40,3 +40,6 @@ compile_commands.json
 # Crash dumps
 core
 core.*
+
+# Test files
+test_o/

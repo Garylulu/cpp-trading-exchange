@@ -44,3 +44,9 @@ cc_library(
         ":order",
     ],
 )
+
+cc_library(
+    name = "locked_queue",
+    hdrs = ["locked_queue.h"],
+    visibility = ["//visibility:public"],
+)

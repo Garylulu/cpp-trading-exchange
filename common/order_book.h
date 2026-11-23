@@ -110,6 +110,17 @@ public:
         return out;
     }
 
+    /// A copy of every live order, asks then bids, each side best price first
+    /// and oldest first within a price. Adding them in this order to an empty
+    /// book rebuilds this book with the same priorities.
+    auto orders() const -> std::vector<Order> {
+        std::vector<Order> out;
+        out.reserve(live_.size());
+        appendOrders(out, asks_);
+        appendOrders(out, bids_);
+        return out;
+    }
+
     // Deleted special members: the book owns its pool, and the queues and index
     // point into it; copying would alias them.
     OrderBook() = delete("an OrderBook owns its order pool");
@@ -170,6 +181,14 @@ private:
             if (isLive(queue.top())) {
                 out += std::format("    {}\n", queue.top().order_->toString());
             }
+        }
+    }
+
+    /// Append a copy of each live order in queue, in priority order.
+    template <typename Queue>
+    void appendOrders(std::vector<Order> &out, Queue queue) const {
+        for (; !queue.empty(); queue.pop()) {
+            if (isLive(queue.top())) out.push_back(*queue.top().order_);
         }
     }
 

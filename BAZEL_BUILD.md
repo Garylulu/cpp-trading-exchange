@@ -26,6 +26,9 @@ bazel build //examples/... # build examples only
 
 ```bash
 bazel run //examples:container_benchmark
+bazel run //exchange:exchange_main          # run the exchange until Ctrl+C
+bazel run //exchange:exchange_main -- 5     # or for 5 seconds
+bazel test //exchange/tests/...             # market data tests, against both order books
 ```
 
 ## Project Structure
@@ -46,6 +49,10 @@ cpp-trading-exchange/
 |--------|-------------|
 | `//common:perf_utils` | RDTSC cycle counter header library |
 | `//examples:container_benchmark` | Benchmarks vector vs map vs unordered_map |
+| `//common:locked_queue` | Mutex + condition variable queue for passing work between threads |
+| `//exchange:market_data` | Market data feed (numbered updates, snapshots) and the client that rebuilds the book from it |
+| `//exchange:matching_engine` | Engine thread that owns the order book and publishes market data |
+| `//exchange:exchange_main` | Runs the exchange with trading clients and a mid-day market data client |
 
 ## Compiler Flags
 

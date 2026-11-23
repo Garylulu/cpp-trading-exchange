@@ -169,6 +169,21 @@ public:
         return out;
     }
 
+    /// A copy of every live order, asks then bids, each side best price first
+    /// and oldest first within a price. Adding them in this order to an empty
+    /// book rebuilds this book with the same priorities.
+    auto orders() const -> std::vector<Order> {
+        std::vector<Order> out;
+        out.reserve(live_.size());
+        if (best_ask_ != kNone) {
+            for (std::size_t i = best_ask_; i < asks_.size(); ++i) appendLevelOrders(out, asks_[i]);
+        }
+        if (best_bid_ != kNone) {
+            for (std::size_t i = best_bid_ + 1; i-- > 0;) appendLevelOrders(out, bids_[i]);
+        }
+        return out;
+    }
+
     // Deleted special members: the book owns its pool, and the levels and index
     // point into it; copying would alias them.
     OrderBook() = delete("an OrderBook owns its order pool");
@@ -222,6 +237,13 @@ private:
     static void appendLevel(std::string &out, const Level &level) {
         for (const OrderNode *node = level.head_; node != nullptr; node = node->next_) {
             out += std::format("    {}\n", node->order_.toString());
+        }
+    }
+
+    /// Append a copy of each order at level, oldest first.
+    static void appendLevelOrders(std::vector<Order> &out, const Level &level) {
+        for (const OrderNode *node = level.head_; node != nullptr; node = node->next_) {
+            out.push_back(node->order_);
         }
     }
 
